@@ -47,18 +47,29 @@ class PlanetGenerator:
         )
 
         try:
-            # Step 1: Initialize the spherical grid
-            logger.info("[1/4] Initializing spherical grid...")
-            grid_points = create_spherical_grid(self.resolution)
+            # Step 1: Initialize the spherical grid (Icosphere)
+            logger.info("[1/4] Initializing spherical grid (Icosphere)...")
+            # Convert abstract resolution to a sane subdivision level (e.g., 4-6)
+            subdivisions = (
+                max(1, min(7, int(self.resolution // 200)))
+                if self.resolution > 10
+                else self.resolution
+            )
+            vertices, faces = create_spherical_grid(subdivisions)
 
             # Step 2: Generate base heightmap using 3D noise
             logger.info("[2/4] Generating 3D noise heightmap...")
-            heightmap = generate_heightmap(grid_points, seed=self.seed)
+            heightmap = generate_heightmap(vertices, seed=self.seed)
 
             # Step 3: Apply cellular automata (Tectonics and Erosion)
             logger.info("[3/4] Simulating tectonics and erosion...")
-            heightmap = simulate_tectonics(heightmap, iterations=10, plate_count=15)
-            heightmap = simulate_erosion(heightmap, iterations=5, erosion_rate=0.01)
+            adjacency_list = []  # Placeholder for graph edges derived from faces
+            heightmap = simulate_tectonics(
+                heightmap, adjacency_list, iterations=10, plate_count=15
+            )
+            heightmap = simulate_erosion(
+                heightmap, adjacency_list, iterations=5, erosion_rate=0.01
+            )
 
             # Step 4: Calculate climate and biomes
             logger.info("[4/4] Calculating climate matrices and biomes...")
@@ -67,7 +78,8 @@ class PlanetGenerator:
             logger.info("✅ Planet generation pipeline completed successfully.")
 
             return {
-                "grid": grid_points,
+                "vertices": vertices,
+                "faces": faces,
                 "heightmap": heightmap,
                 "biome_map": biome_map,
             }

@@ -54,22 +54,112 @@ def normalize_vectors_fast(vectors):
     return result
 
 
-def create_spherical_grid(resolution):
+def create_faces_array(size):
     """
-    Allocates a contiguous block of memory for the spherical planet grid,
-    suitable for fast, cache-friendly reads and writes during cellular automata
-    simulations and heightmap generation.
+    Creates a highly optimized NumPy array tailored for storing 3D triangular faces
+    (indices of vertices).
 
     Args:
-        resolution (int): The base resolution or subdivision level of the grid.
+        size (int): The number of triangular faces to allocate.
 
     Returns:
-        numpy.ndarray: The allocated data structure representing the grid cells.
+        numpy.ndarray: An array of shape (size, 3) optimized for indexing operations.
     """
-    # Placeholder formula for array size based on resolution.
-    # We allocate it as a contiguous float32 2D array.
-    total_points = resolution * resolution
-    return create_vector3_array(total_points)
+    return np.zeros((size, 3), dtype=np.int32)
+
+
+def create_spherical_grid(subdivisions):
+    """
+    Generates an Icosphere by recursively subdividing a base icosahedron.
+
+    Args:
+        subdivisions (int): The subdivision level of the base icosahedron.
+
+    Returns:
+        tuple[numpy.ndarray, numpy.ndarray]: A tuple containing:
+            - vertices: An array of normalized 3D coordinates (shape: V x 3).
+            - faces: An array of vertex indices forming triangles (shape: F x 3).
+    """
+    t = (1.0 + np.sqrt(5.0)) / 2.0
+
+    vertices = [
+        [-1, t, 0],
+        [1, t, 0],
+        [-1, -t, 0],
+        [1, -t, 0],
+        [0, -1, t],
+        [0, 1, t],
+        [0, -1, -t],
+        [0, 1, -t],
+        [t, 0, -1],
+        [t, 0, 1],
+        [-t, 0, -1],
+        [-t, 0, 1],
+    ]
+
+    faces = [
+        [0, 11, 5],
+        [0, 5, 1],
+        [0, 1, 7],
+        [0, 7, 10],
+        [0, 10, 11],
+        [1, 5, 9],
+        [5, 11, 4],
+        [11, 10, 2],
+        [10, 7, 6],
+        [7, 1, 8],
+        [3, 9, 4],
+        [3, 4, 2],
+        [3, 2, 6],
+        [3, 6, 8],
+        [3, 8, 9],
+        [4, 9, 5],
+        [2, 4, 11],
+        [6, 2, 10],
+        [8, 6, 7],
+        [9, 8, 1],
+    ]
+
+    midpoint_cache = {}
+
+    def get_midpoint(v1, v2):
+        key = (min(v1, v2), max(v1, v2))
+        if key in midpoint_cache:
+            return midpoint_cache[key]
+
+        p1 = vertices[v1]
+        p2 = vertices[v2]
+        pmid = [
+            (p1[0] + p2[0]) / 2.0,
+            (p1[1] + p2[1]) / 2.0,
+            (p1[2] + p2[2]) / 2.0,
+        ]
+        idx = len(vertices)
+        vertices.append(pmid)
+        midpoint_cache[key] = idx
+        return idx
+
+    for _ in range(subdivisions):
+        new_faces = []
+        for tri in faces:
+            v1, v2, v3 = tri
+            a = get_midpoint(v1, v2)
+            b = get_midpoint(v2, v3)
+            c = get_midpoint(v3, v1)
+
+            new_faces.append([v1, a, c])
+            new_faces.append([v2, b, a])
+            new_faces.append([v3, c, b])
+            new_faces.append([a, b, c])
+        faces = new_faces
+
+    vertices_np = np.array(vertices, dtype=np.float32)
+    faces_np = np.array(faces, dtype=np.int32)
+
+    # Normalize vertices to push them to the sphere surface
+    vertices_np = normalize_vectors_fast(vertices_np)
+
+    return vertices_np, faces_np
 
 
 @njit(fastmath=True)

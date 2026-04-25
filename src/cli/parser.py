@@ -33,9 +33,9 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--format",
         type=str,
-        choices=["png", "obj"],
+        choices=["png", "obj", "json"],
         default="png",
-        help="Output format for the generated planet (png or obj) (default: png)",
+        help="Output format for the generated planet (png, obj, or json) (default: png)",
     )
 
     parser.add_argument(

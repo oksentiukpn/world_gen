@@ -5,28 +5,30 @@ processes using cellular automata on a discrete grid.
 """
 
 
-def simulate_tectonics(grid, iterations, plate_count):
+def simulate_tectonics(heightmap, adjacency_list, iterations, plate_count):
     """
     Simulates tectonic plate movements to create mountain ranges and ocean trenches.
 
     Args:
-        grid (numpy.ndarray): The discrete grid representing the planet's surface.
+        heightmap (numpy.ndarray): The current elevations of the vertices.
+        adjacency_list (list of lists): The graph structure connecting vertices.
         iterations (int): The number of simulation steps to run.
         plate_count (int): The number of initial tectonic plates to generate.
 
     Returns:
-        numpy.ndarray: The modified grid with updated elevations due to tectonics.
+        numpy.ndarray: The modified heightmap with updated elevations due to tectonics.
     """
     pass
 
 
-def simulate_erosion(heightmap, iterations, erosion_rate):
+def simulate_erosion(heightmap, adjacency_list, iterations, erosion_rate):
     """
     Applies hydraulic and thermal erosion to the terrain using cellular automata,
-    smoothing sharp cliffs and creating river valleys.
+    smoothing sharp cliffs and creating river valleys along the graph edges.
 
     Args:
         heightmap (numpy.ndarray): The current terrain elevation data.
+        adjacency_list (list of lists): The graph structure connecting vertices.
         iterations (int): The number of erosion cycles to simulate.
         erosion_rate (float): The intensity of the erosion applied per step.
 
@@ -36,31 +38,34 @@ def simulate_erosion(heightmap, iterations, erosion_rate):
     pass
 
 
-def get_neighbors(cell_index, grid_resolution):
+def get_neighbors(vertex_index, adjacency_list):
     """
-    Retrieves the indices of neighboring cells on the spherical discrete grid.
+    Retrieves the indices of neighboring vertices on the Icosphere graph.
 
     Args:
-        cell_index (int): The index of the target cell.
-        grid_resolution (int): The resolution metric of the spherical grid.
+        vertex_index (int): The index of the target vertex.
+        adjacency_list (list of lists or similar): Precomputed connections for each vertex.
 
     Returns:
-        list or numpy.ndarray: Indices of the adjacent neighboring cells.
+        list or numpy.ndarray: Indices of the adjacent neighboring vertices.
     """
     pass
 
 
-def apply_custom_automata(grid, transition_function, iterations):
+def apply_custom_automata(
+    vertex_states, adjacency_list, transition_function, iterations
+):
     """
-    A generic cellular automaton runner for the planetary grid. Updates cell
+    A generic cellular automaton runner for the planetary graph. Updates vertex
     states based on a provided transition function and the states of its neighbors.
 
     Args:
-        grid (numpy.ndarray): The initial state grid.
+        vertex_states (numpy.ndarray): The initial state of each vertex.
+        adjacency_list (list of lists): The graph structure connecting vertices.
         transition_function (callable): A function that computes the next state.
         iterations (int): The number of generations to simulate.
 
     Returns:
-        numpy.ndarray: The final state of the grid after all iterations.
+        numpy.ndarray: The final states after all iterations.
     """
     pass
