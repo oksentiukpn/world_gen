@@ -18,7 +18,7 @@ def simulate_tectonics(heightmap, adjacency_list, iterations, plate_count):
     Returns:
         numpy.ndarray: The modified heightmap with updated elevations due to tectonics.
     """
-    pass
+    return heightmap
 
 
 def simulate_erosion(heightmap, adjacency_list, iterations, erosion_rate):
@@ -35,7 +35,7 @@ def simulate_erosion(heightmap, adjacency_list, iterations, erosion_rate):
     Returns:
         numpy.ndarray: The eroded heightmap.
     """
-    pass
+    return heightmap
 
 
 def get_neighbors(vertex_index, adjacency_list):

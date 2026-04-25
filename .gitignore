@@ -143,6 +143,7 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
+my_planet.obj
 
 # mypy
 .mypy_cache/
