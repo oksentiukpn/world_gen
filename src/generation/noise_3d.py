@@ -4,8 +4,47 @@ Contains functions for generating fractal noise (e.g., Simplex, Perlin)
 on a spherical surface to create realistic heightmaps.
 """
 
+import math
+import numpy as np
 
-def generate_simplex_noise_3d(x, y, z, seed=0):
+def pcg_hash(x, y, z, seed=0):
+    # 32-bit
+    mask = 0xFFFFFFFF
+
+    state = (x * 1664525 + y * 1013904223 + z * 214013 + seed*735044629) & mask
+
+    word = ((state >> ((state >> 28) + 4)) ^ state) * 277803737
+    word &= mask
+
+    return (word >> 22) ^ word
+
+def hash_vector(x, y, z, seed=0):
+    hash_x = pcg_hash(x, y, z, seed)
+    hash_y = pcg_hash(x + 12345, y + 67890, z + 13579, seed)
+
+    # [-pi / 2, pi / 2]
+    theta = math.acos((hash_x / 0xFFFFFFFF) * 2 - 1)
+    # [0, 2 * pi]
+    phi = 2.0 * math.pi * (hash_y / 0xFFFFFFFF)
+
+    vector_x = math.cos(phi) * math.sin(theta)
+    vector_y = math.sin(phi) * math.sin(theta)
+    vector_z = math.cos(theta)
+
+    return vector_x, vector_y, vector_z
+
+
+def dot_product(vector1: tuple[float, float, float], vector2: tuple[float, float, float]):
+    return vector1[0] * vector2[0] + vector1[1] * vector2[1] + vector1[2] * vector2[2]
+
+def lerp(a, b, t):
+    return a + t*(b - a)
+
+def fade(x):
+    # Формула Кенна Перліна: 6t^5 - 15t^4 + 10t^3
+    return x * x * x * (x * (x * 6 - 15) + 10)
+
+def perlin_noise_3d(x, y, z, seed=0):
     """
     Generates a single octave of 3D Simplex or Perlin noise at the given coordinates.
 
@@ -18,11 +57,50 @@ def generate_simplex_noise_3d(x, y, z, seed=0):
     Returns:
         float: A noise value, typically ranging from -1.0 to 1.0.
     """
-    pass
+    x_floor = int(math.floor(x))
+    y_floor = int(math.floor(y))
+    z_floor = int(math.floor(z))
+
+    x_ceil = x_floor + 1
+    y_ceil = y_floor + 1
+    z_ceil = z_floor + 1
+
+    # (((000 100) (010 110)) ((001 101)(011 111)))
+
+    points = [
+        (x_floor, y_floor, z_floor), (x_ceil, y_floor, z_floor),
+        (x_floor, y_ceil, z_floor), (x_ceil, y_ceil, z_floor),
+        (x_floor, y_floor, z_ceil), (x_ceil, y_floor, z_ceil),
+        (x_floor, y_ceil, z_ceil), (x_ceil, y_ceil, z_ceil)
+    ]
+
+    vectors_to_coord = [(x - point[0], y - point[1], z - point[2]) for point in points]
+
+    gradients = [hash_vector(x, y, z, seed) for x, y, z in points]
+
+    dots = [
+        dot_product(v_to_coord, grad) for v_to_coord, grad in zip(vectors_to_coord, gradients)
+    ] # dot_products
+
+    value = lerp(
+        lerp(
+            lerp(dots[0], dots[1], fade(x - x_floor)),
+            lerp(dots[2], dots[3], fade(x - x_floor)),
+            fade(y - y_floor)
+        ),
+        lerp(
+            lerp(dots[4], dots[5], fade(x - x_floor)),
+            lerp(dots[6], dots[7], fade(x - x_floor)),
+            fade(y - y_floor)
+        ),
+        fade(z - z_floor)
+    )
+
+    return value
 
 
-def generate_fractal_noise_3d(
-    x, y, z, octaves=4, persistence=0.5, lacunarity=2.0, seed=0
+def fractal_perlin_noise_3d(
+    x, y, z, scale = 0.5, octaves=4, persistence=0.5, lacunarity=2.0, seed=0
 ):
     """
     Generates fractal terrain noise using Fractional Brownian Motion (fBm)
@@ -40,7 +118,16 @@ def generate_fractal_noise_3d(
     Returns:
         float: The combined fractal noise value.
     """
-    pass
+    amplitude = 1
+    curr_scale = scale
+    value = 0
+    for i in range(octaves):
+        octave_seed = seed + i * 1337
+        value += perlin_noise_3d(x*curr_scale,y*curr_scale,z*curr_scale, octave_seed) * amplitude
+        amplitude *= persistence
+        curr_scale *= lacunarity
+
+    return value
 
 
 def apply_ridge_noise(x, y, z, octaves=4, persistence=0.5, lacunarity=2.0, seed=0):
@@ -63,7 +150,7 @@ def apply_ridge_noise(x, y, z, octaves=4, persistence=0.5, lacunarity=2.0, seed=
     pass
 
 
-def generate_spherical_heightmap(grid_points, seed=0):
+def generate_heightmap(grid_points, seed=0):
     """
     Generates a complete heightmap for a sphere by evaluating 3D noise
     at each normalized coordinate on the spherical grid.
@@ -75,4 +162,8 @@ def generate_spherical_heightmap(grid_points, seed=0):
     Returns:
         numpy.ndarray: An array of elevation values corresponding to each grid point.
     """
-    pass
+
+    v_noise = np.vectorize(fractal_perlin_noise_3d, otypes=[float])
+    elevations = v_noise(grid_points[:, 0], grid_points[:, 1], grid_points[:, 2], seed=seed)
+
+    return elevations
