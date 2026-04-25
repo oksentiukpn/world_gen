@@ -6,6 +6,7 @@ Handles CLI application startup.
 import sys
 
 from cli.parser import parse_arguments
+from core.export import export_planet
 from core.logger import get_logger
 from generation.generator import PlanetGenerator
 
@@ -24,17 +25,20 @@ def run_cli(args):
     """
     seed = getattr(args, "seed", 42)
     resolution = getattr(args, "resolution", 1024)
-    output_path = getattr(args, "output", "planet.png")
+    out_format = getattr(args, "format", "png")
+    output_path = getattr(args, "output", f"planet.{out_format}")
 
     logger.info("🌍 Starting procedural planet generation CLI...")
     logger.info(
-        f"Configuration - Seed: {seed} | Resolution: {resolution} | Output: {output_path}"
+        f"Configuration - Seed: {seed} | Resolution: {resolution} | Format: {out_format} | Output: {output_path}"
     )
 
     generator = PlanetGenerator(seed=seed, resolution=resolution)
     planet_data = generator.generate()
 
-    logger.info(f"✅ Planet generated! Saving output to: {output_path} (Placeholder)")
+    logger.info(f"💾 Saving planet data to {output_path}...")
+    export_planet(planet_data, output_path, fmt=out_format)
+    logger.info("✅ Generation and export fully complete!")
 
 
 def main():
