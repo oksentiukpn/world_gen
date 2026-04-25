@@ -1,3 +1,14 @@
+## to run
+png
+```bash
+python src/main.py --seed 67 --resolution 7 --format png --output my_map
+```
+or
+3D model
+```bash
+python src/main.py --seed 777 --resolution 5 --format obj --output my_planet
+```
+
 # 🌍 Procedural Planet Generator
 
 **Комп'ютерний проєкт з Дискретної математики (ІІ семестр, APPS UCU)**

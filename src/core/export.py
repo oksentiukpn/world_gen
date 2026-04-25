@@ -12,26 +12,76 @@ from core.logger import get_logger
 logger = get_logger(__name__)
 
 
-def export_to_png(filepath: str, heightmap: np.ndarray, biome_map: np.ndarray = None):
+def export_to_png(
+    filepath: str,
+    vertices: np.ndarray,
+    faces: np.ndarray,
+    heightmap: np.ndarray,
+    biome_map: np.ndarray = None,
+):
     """
-    Exports the planet data as a 2D image (e.g., Equirectangular projection).
+    Exports the planet data as a 2D Equirectangular map image.
 
     Args:
         filepath (str): The output file path.
+        vertices (numpy.ndarray): The base 3D coordinates.
         heightmap (numpy.ndarray): The elevation data.
         biome_map (numpy.ndarray, optional): The biome data for coloring.
     """
     logger.info(f"Exporting planet to PNG image: {filepath}")
 
-    # Placeholder for actual image generation logic (e.g., using PIL or Matplotlib)
-    # Note: Since the grid is spherical, this requires projecting the 3D points
-    # onto a 2D equirectangular grid before saving as an image.
-    logger.warning("PNG export logic is currently a placeholder.")
+    try:
+        from PIL import Image, ImageDraw
+    except ImportError:
+        logger.error(
+            "Pillow (PIL) is not installed. Cannot export PNG. "
+            "Please run: pip install Pillow"
+        )
+        return
 
-    # Simulated file creation for pipeline testing
-    with open(filepath, "w") as f:
-        f.write("PNG EXPORT PLACEHOLDER\n")
+    width, img_height = 1024, 512
+    img = Image.new("RGB", (width, img_height), color=(0, 0, 0))
+    draw = ImageDraw.Draw(img)
 
+    if vertices is not None and faces is not None:
+        # Extract coordinates
+        x = vertices[:, 0]
+        y = vertices[:, 1]
+        z = vertices[:, 2]
+
+        # Convert to spherical coordinates (longitude and latitude)
+        lon = np.arctan2(z, x)
+        lat = np.arcsin(np.clip(y, -1.0, 1.0))
+
+        # Map to 2D image pixels
+        px = ((lon + np.pi) / (2 * np.pi) * (width - 1)).astype(np.int32)
+        py = ((lat + np.pi / 2) / np.pi * (img_height - 1)).astype(np.int32)
+        py = img_height - 1 - py  # Invert Y so North is up
+
+        # Placeholder colors (until biome_map logic is ready)
+        colors = np.zeros((vertices.shape[0], 3), dtype=np.uint8)
+        if heightmap is not None:
+            colors[heightmap > 0.5] = [255, 255, 255]  # Snow
+            colors[(heightmap <= 0.5) & (heightmap > 0.0)] = [34, 139, 34]  # Land
+            colors[heightmap <= 0.0] = [0, 105, 148]  # Ocean
+        else:
+            colors[:] = [128, 128, 128]
+
+        for i in range(faces.shape[0]):
+            v1, v2, v3 = faces[i]
+
+            # Check for wrap-around across the dateline (antimeridian)
+            dx1 = abs(px[v1] - px[v2])
+            dx2 = abs(px[v2] - px[v3])
+            dx3 = abs(px[v3] - px[v1])
+            if dx1 > width / 2 or dx2 > width / 2 or dx3 > width / 2:
+                continue
+
+            # Average color or color of first vertex
+            c = tuple(colors[v1].tolist())
+            draw.polygon([(px[v1], py[v1]), (px[v2], py[v2]), (px[v3], py[v3])], fill=c)
+
+    img.save(filepath)
     logger.info("PNG export complete.")
 
 
@@ -164,4 +214,4 @@ def export_planet(planet_data: dict, filepath: str, fmt: str = "png"):
     else:
         if not filepath.endswith(".png"):
             filepath += ".png"
-        export_to_png(filepath, heightmap, biome_map)
+        export_to_png(filepath, vertices, faces, heightmap, biome_map)
