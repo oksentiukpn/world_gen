@@ -1,64 +1,102 @@
 """
 Climate and biome generation.
 Handles temperature and moisture calculations based on terrain height
-and latitude, and determines the resulting biomes.
+and latitude, and determines the resulting biomes for the 3D Icosphere.
+
+INSTRUCTIONS FOR PARTICIPANT 2 (LOGIC / BIOMES):
+-----------------------------------------------------------
+1. The planet is a 3D sphere, not a 2D map!
+2. To find the "latitude" (equator vs poles) of a point, look at its `y` coordinate
+   in the `vertices` array. Since the sphere is normalized, `y` ranges from
+   -1.0 (South Pole) to 0.0 (Equator) to 1.0 (North Pole).
+3. Temperature should be highest at y=0 and lowest at y=1 or y=-1.
+   Remember: Temperature also decreases as height (elevation) increases (mountains are cold).
+4. Determine biomes using a Whittaker diagram approach (Temperature vs Moisture).
+5. Use Numba! Wrap your math-heavy functions in @njit(fastmath=True)
+   to ensure they run instantly for hundreds of thousands of vertices.
 """
 
+import numpy as np
+from numba import njit, prange
 
-def calculate_temperature(height: float, latitude: float) -> float:
+
+# @njit(fastmath=True) # Uncomment when implementing
+def calculate_temperature(y_coord, elevation):
     """
-    Calculates the temperature of a specific point based on its elevation
-    and latitude (distance from the equator).
+    Calculates the temperature of a specific vertex based on its latitude (y_coord)
+    and its elevation (height).
 
     Args:
-        height (float): The elevation of the terrain at the given point.
-        latitude (float): The normalized latitude of the point (e.g., -1.0 to 1.0).
+        y_coord (float): The normalized y-coordinate (-1.0 to 1.0).
+        elevation (float): The terrain height at this vertex.
 
     Returns:
-        float: The calculated temperature value.
+        float: The calculated temperature value (e.g., 0.0 to 1.0).
     """
-    pass
+    # TODO (Participant 2):
+    # 1. Calculate base temp from latitude (abs(y_coord)). Equator is hot, poles are cold.
+    # 2. Subtract temperature based on elevation (higher = colder).
+    return 0.5
 
 
-def calculate_moisture(height: float, distance_to_water: float) -> float:
+# @njit(fastmath=True)
+def calculate_moisture(elevation):
     """
-    Calculates the moisture level of a specific point, simulating precipitation
-    based on elevation and proximity to water bodies (oceans).
+    Calculates the moisture level of a specific vertex.
 
     Args:
-        height (float): The elevation of the terrain at the given point.
-        distance_to_water (float): The normalized distance to the nearest ocean.
+        elevation (float): The terrain height at this vertex.
 
     Returns:
         float: The calculated moisture value.
     """
-    pass
+    # TODO (Participant 2):
+    # 1. Base moisture can depend on proximity to ocean (elevation <= 0).
+    # 2. Advanced: simulate rain shadows based on wind direction and mountains.
+    return 0.5
 
 
-def determine_biome(temperature: float, moisture: float) -> int | str:
+# @njit(fastmath=True)
+def determine_biome(temperature, moisture):
     """
-    Determines the biome category based on temperature and moisture levels,
-    typically mapping to a Whittaker biome diagram.
+    Determines the biome category based on temperature and moisture levels.
 
     Args:
         temperature (float): The calculated temperature at the location.
         moisture (float): The calculated moisture at the location.
 
     Returns:
-        int or str: An identifier for the resulting biome (e.g., Desert, Tundra, Forest).
+        int: An identifier/code for the resulting biome.
     """
-    pass
+    # TODO (Participant 2):
+    # Map (temperature, moisture) pairs to biome IDs.
+    # e.g., 0 = Ocean, 1 = Desert, 2 = Forest, 3 = Snow
+    return 0
 
 
-def generate_biome_map(heightmap):
+# @njit(parallel=True, fastmath=True)
+def generate_biome_map(heightmap, vertices):
     """
-    Orchestrates the generation of a full biome map from a given heightmap.
-    Calculates temperature and moisture for each cell and assigns a biome.
+    Orchestrates the generation of a full biome map for all vertices.
+    Calculates temperature and moisture for each vertex and assigns a biome.
 
     Args:
-        heightmap (numpy.ndarray or similar): The input terrain elevation data.
+        heightmap (numpy.ndarray): 1D array of terrain elevations.
+        vertices (numpy.ndarray): 2D array of normalized vertex coordinates (V x 3).
 
     Returns:
-        numpy.ndarray or similar: A map containing the resulting biome data.
+        numpy.ndarray: A 1D array containing the resulting biome ID for each vertex.
     """
-    pass
+    num_vertices = heightmap.shape[0]
+    biome_map = np.zeros(num_vertices, dtype=np.int32)
+
+    # TODO (Participant 2):
+    # 1. Use a loop (prange) to iterate over all vertices.
+    # 2. For each vertex `i`:
+    #    - Get `y` from vertices[i, 1]
+    #    - Get `elevation` from heightmap[i]
+    #    - temp = calculate_temperature(...)
+    #    - moist = calculate_moisture(...)
+    #    - biome_map[i] = determine_biome(temp, moist)
+
+    return biome_map

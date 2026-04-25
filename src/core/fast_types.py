@@ -179,3 +179,48 @@ def fast_distance_3d(point_a, point_b):
     dy = point_a[1] - point_b[1]
     dz = point_a[2] - point_b[2]
     return np.sqrt(dx * dx + dy * dy + dz * dz)
+
+
+@njit(fastmath=True)
+def build_adjacency_list(num_vertices, faces):
+    """
+    Builds a Numba-optimized adjacency list for the icosphere graph.
+    Vertices on an icosphere have at most 6 neighbors (base vertices have 5).
+
+    Args:
+        num_vertices (int): Total number of vertices.
+        faces (numpy.ndarray): The triangular faces array.
+
+    Returns:
+        numpy.ndarray: An array of shape (V, 6) containing neighbor indices.
+                       Unused slots (for base vertices with 5 neighbors) are -1.
+    """
+    adj = np.full((num_vertices, 6), -1, dtype=np.int32)
+    counts = np.zeros(num_vertices, dtype=np.int32)
+
+    for i in range(faces.shape[0]):
+        for j in range(3):
+            a = faces[i, j]
+            b = faces[i, (j + 1) % 3]
+
+            # Add b to a's neighbors
+            found = False
+            for k in range(counts[a]):
+                if adj[a, k] == b:
+                    found = True
+                    break
+            if not found:
+                adj[a, counts[a]] = b
+                counts[a] += 1
+
+            # Add a to b's neighbors
+            found = False
+            for k in range(counts[b]):
+                if adj[b, k] == a:
+                    found = True
+                    break
+            if not found:
+                adj[b, counts[b]] = a
+                counts[b] += 1
+
+    return adj

@@ -5,7 +5,7 @@ and biome generation into a single, cohesive generation pipeline.
 """
 
 from biome.climate import generate_biome_map
-from core.fast_types import create_spherical_grid
+from core.fast_types import build_adjacency_list, create_spherical_grid
 from core.logger import get_logger
 from generation.cellular import simulate_erosion, simulate_tectonics
 from generation.noise_3d import generate_heightmap
@@ -63,7 +63,7 @@ class PlanetGenerator:
 
             # Step 3: Apply cellular automata (Tectonics and Erosion)
             logger.info("[3/4] Simulating tectonics and erosion...")
-            adjacency_list = []  # Placeholder for graph edges derived from faces
+            adjacency_list = build_adjacency_list(vertices.shape[0], faces)
             heightmap = simulate_tectonics(
                 heightmap, adjacency_list, iterations=10, plate_count=15
             )
@@ -73,7 +73,7 @@ class PlanetGenerator:
 
             # Step 4: Calculate climate and biomes
             logger.info("[4/4] Calculating climate matrices and biomes...")
-            biome_map = generate_biome_map(heightmap)
+            biome_map = generate_biome_map(heightmap, vertices)
 
             logger.info("✅ Planet generation pipeline completed successfully.")
 
