@@ -4,6 +4,9 @@ Contains Numba-optimized functions and data structures required for
 fast, real-time procedural generation.
 """
 
+import numpy as np
+from numba import njit, prange
+
 
 def create_vector3_array(size):
     """
@@ -16,9 +19,11 @@ def create_vector3_array(size):
     Returns:
         numpy.ndarray: An array of shape (size, 3) optimized for math operations.
     """
-    pass
+    # Using float32 for faster calculations and lower memory footprint
+    return np.zeros((size, 3), dtype=np.float32)
 
 
+@njit(parallel=True, fastmath=True)
 def normalize_vectors_fast(vectors):
     """
     A fast, Numba-optimized function to normalize an array of 3D vectors.
@@ -30,7 +35,23 @@ def normalize_vectors_fast(vectors):
     Returns:
         numpy.ndarray: An array of normalized 3D vectors.
     """
-    pass
+    result = np.empty_like(vectors)
+    for i in prange(vectors.shape[0]):
+        x = vectors[i, 0]
+        y = vectors[i, 1]
+        z = vectors[i, 2]
+        length = np.sqrt(x * x + y * y + z * z)
+
+        if length > 0:
+            result[i, 0] = x / length
+            result[i, 1] = y / length
+            result[i, 2] = z / length
+        else:
+            result[i, 0] = 0.0
+            result[i, 1] = 0.0
+            result[i, 2] = 0.0
+
+    return result
 
 
 def create_spherical_grid(resolution):
@@ -45,9 +66,13 @@ def create_spherical_grid(resolution):
     Returns:
         numpy.ndarray: The allocated data structure representing the grid cells.
     """
-    pass
+    # Placeholder formula for array size based on resolution.
+    # We allocate it as a contiguous float32 2D array.
+    total_points = resolution * resolution
+    return create_vector3_array(total_points)
 
 
+@njit(fastmath=True)
 def fast_distance_3d(point_a, point_b):
     """
     A Numba-optimized helper function to quickly calculate the Euclidean
@@ -60,4 +85,7 @@ def fast_distance_3d(point_a, point_b):
     Returns:
         float: The calculated Euclidean distance.
     """
-    pass
+    dx = point_a[0] - point_b[0]
+    dy = point_a[1] - point_b[1]
+    dz = point_a[2] - point_b[2]
+    return np.sqrt(dx * dx + dy * dy + dz * dz)
