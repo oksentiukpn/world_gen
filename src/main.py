@@ -6,6 +6,10 @@ Handles CLI application startup.
 import sys
 
 from cli.parser import parse_arguments
+from core.logger import get_logger
+from generation.generator import PlanetGenerator
+
+logger = get_logger(__name__)
 
 
 def run_cli(args):
@@ -22,23 +26,15 @@ def run_cli(args):
     resolution = getattr(args, "resolution", 1024)
     output_path = getattr(args, "output", "planet.png")
 
-    print(f"🌍 Starting procedural planet generation...")
-    print(f"   Seed: {seed} | Resolution: {resolution}")
+    logger.info("🌍 Starting procedural planet generation CLI...")
+    logger.info(
+        f"Configuration - Seed: {seed} | Resolution: {resolution} | Output: {output_path}"
+    )
 
-    print("[1/4] Generating spherical grid...")
-    # Placeholder: grid_points = create_spherical_grid(resolution)
+    generator = PlanetGenerator(seed=seed, resolution=resolution)
+    planet_data = generator.generate()
 
-    print("[2/4] Generating 3D noise and heightmap...")
-    # Placeholder: elevations = generate_spherical_heightmap(grid_points, seed=seed)
-
-    print("[3/4] Simulating tectonics and erosion...")
-    # Placeholder: elevations = simulate_tectonics(elevations, iterations=10, plate_count=15)
-    # Placeholder: elevations = simulate_erosion(elevations, iterations=5, erosion_rate=0.01)
-
-    print("[4/4] Calculating climate and mapping biomes...")
-    # Placeholder: biome_map = generate_biome_map(elevations)
-
-    print(f"✅ Planet generated! Saving output to: {output_path}")
+    logger.info(f"✅ Planet generated! Saving output to: {output_path} (Placeholder)")
 
 
 def main():
