@@ -61,9 +61,14 @@ def export_to_png(
         # Placeholder colors (until biome_map logic is ready)
         colors = np.zeros((vertices.shape[0], 3), dtype=np.uint8)
         if heightmap is not None:
-            colors[heightmap > 0.5] = [255, 255, 255]  # Snow
-            colors[(heightmap <= 0.5) & (heightmap > 0.0)] = [34, 139, 34]  # Land
-            colors[heightmap <= 0.0] = [0, 105, 148]  # Ocean
+            h_min = heightmap.min()
+            h_max = heightmap.max()
+            h_range = h_max - h_min if h_max > h_min else 1.0
+            norm_h = (heightmap - h_min) / h_range
+
+            colors[norm_h > 0.6] = [255, 255, 255]  # Snow
+            colors[(norm_h <= 0.6) & (norm_h > 0.02)] = [34, 139, 34]  # Land
+            colors[norm_h <= 0.02] = [0, 105, 148]  # Ocean
         else:
             colors[:] = [128, 128, 128]
 
@@ -86,7 +91,11 @@ def export_to_png(
 
 
 def export_to_obj(
-    filepath: str, vertices: np.ndarray, faces: np.ndarray, heightmap: np.ndarray
+    filepath: str,
+    vertices: np.ndarray,
+    faces: np.ndarray,
+    heightmap: np.ndarray,
+    biome_map: np.ndarray = None,
 ):
     """
     Exports the planet geometry as a 3D .obj file.
@@ -100,6 +109,10 @@ def export_to_obj(
     logger.info(f"Exporting planet to OBJ 3D model: {filepath}")
 
     try:
+        h_min = heightmap.min() if heightmap is not None else 0.0
+        h_max = heightmap.max() if heightmap is not None else 1.0
+        h_range = h_max - h_min if h_max > h_min else 1.0
+
         with open(filepath, "w") as f:
             f.write("# Procedural Planet Generator OBJ Export\n")
 
@@ -108,13 +121,22 @@ def export_to_obj(
             for i in range(vertices.shape[0]):
                 # Displacement scale (exaggerated for visibility)
                 h = heightmap[i] if heightmap is not None else 0.0
-                scale = 1.0 + (h * 0.1)
+                norm_h = (h - h_min) / h_range
+                scale = 1.0 + (h * 0.02)
 
                 x = vertices[i, 0] * scale
                 y = vertices[i, 1] * scale
                 z = vertices[i, 2] * scale
 
-                f.write(f"v {x:.6f} {y:.6f} {z:.6f}\n")
+                # Color based on normalized height
+                if norm_h > 0.6:
+                    r, g, b = 1.0, 1.0, 1.0  # Snow
+                elif norm_h > 0.02:
+                    r, g, b = 0.133, 0.545, 0.133  # Land (34, 139, 34)
+                else:
+                    r, g, b = 0.0, 0.412, 0.580  # Ocean (0, 105, 148)
+
+                f.write(f"v {x:.6f} {y:.6f} {z:.6f} {r:.3f} {g:.3f} {b:.3f}\n")
 
             # Write faces (OBJ indices are 1-based)
             if faces is not None:
@@ -147,10 +169,15 @@ def export_to_json(
     flat_indices = []
     flat_colors = []
 
+    h_min = heightmap.min() if heightmap is not None else 0.0
+    h_max = heightmap.max() if heightmap is not None else 1.0
+    h_range = h_max - h_min if h_max > h_min else 1.0
+
     if vertices is not None:
         for i in range(vertices.shape[0]):
             h = heightmap[i] if heightmap is not None else 0.0
-            scale = 1.0 + (h * 0.1)
+            norm_h = (h - h_min) / h_range
+            scale = 1.0 + (h * 0.02)
 
             # Displace vertex and add to flat array
             flat_vertices.extend(
@@ -161,10 +188,10 @@ def export_to_json(
                 ]
             )
 
-            # Placeholder color logic based on height (since biome_map structure is pending)
-            if h > 0.5:
+            # Placeholder color logic based on normalized height (since biome_map structure is pending)
+            if norm_h > 0.6:
                 flat_colors.extend([255, 255, 255])  # Snow
-            elif h > 0.0:
+            elif norm_h > 0.02:
                 flat_colors.extend([34, 139, 34])  # Land/Forest
             else:
                 flat_colors.extend([0, 105, 148])  # Water
@@ -206,7 +233,7 @@ def export_planet(planet_data: dict, filepath: str, fmt: str = "png"):
     if fmt == "obj":
         if not filepath.endswith(".obj"):
             filepath += ".obj"
-        export_to_obj(filepath, vertices, faces, heightmap)
+        export_to_obj(filepath, vertices, faces, heightmap, biome_map)
     elif fmt == "json":
         if not filepath.endswith(".json"):
             filepath += ".json"
