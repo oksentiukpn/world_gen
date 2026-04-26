@@ -59,7 +59,7 @@ class PlanetGenerator:
 
             # Step 2: Generate base heightmap using 3D noise
             logger.info("[2/4] Generating 3D noise heightmap...")
-            heightmap = generate_heightmap(vertices, seed=self.seed)
+            heightmap = generate_heightmap(vertices, amplitude=5,seed=self.seed)
 
             # Step 3: Apply cellular automata (Tectonics and Erosion)
             logger.info("[3/4] Simulating tectonics and erosion...")
