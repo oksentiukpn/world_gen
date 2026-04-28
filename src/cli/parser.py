@@ -24,10 +24,37 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--resolution",
+        "--subdivisions",
         type=int,
-        default=1024,
-        help="Resolution of the generated planet grid (default: 1024)",
+        default=5,
+        choices=range(1, 10),
+        metavar="[1-9]",
+        help=(
+            "Icosphere subdivision level controlling mesh detail (default: 5). "
+            "1=42 verts, 3=642, 5=10242, 7=163842, 9=2621442. "
+            "Warning: levels 8-9 are slow and produce very large files."
+        ),
+    )
+
+    parser.add_argument(
+        "--radius",
+        type=float,
+        default=1.0,
+        help=(
+            "Base radius of the exported planet sphere in output units (default: 1.0). "
+            "Scales the planet size without affecting terrain/mountain height."
+        ),
+    )
+
+    parser.add_argument(
+        "--terrain-scale",
+        type=float,
+        default=0.02,
+        dest="terrain_scale",
+        help=(
+            "Height displacement per heightmap unit (default: 0.02). "
+            "Controls how tall mountains are, independently of --radius."
+        ),
     )
 
     parser.add_argument(

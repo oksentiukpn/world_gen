@@ -24,6 +24,11 @@ def get_logger(name: str, level: int = logging.INFO) -> logging.Logger:
     # Prevent adding multiple handlers if the logger is requested multiple times
     if not logger.handlers:
         logger.setLevel(level)
+        # Prevent messages from propagating to parent loggers that also have
+        # handlers — avoids duplicate log lines when both a child logger
+        # (e.g. core.export.obj_exporter.ObjExporter) and its parent
+        # (e.g. core.export) were each given their own handler.
+        logger.propagate = False
 
         # Create console handler for stdout
         console_handler = logging.StreamHandler(sys.stdout)

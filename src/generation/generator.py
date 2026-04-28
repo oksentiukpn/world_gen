@@ -5,8 +5,10 @@ and biome generation into a single, cohesive generation pipeline.
 """
 
 from biome.climate import generate_biome_map
+from core.config import PlanetConfig
 from core.fast_types import build_adjacency_list, create_spherical_grid
 from core.logger import get_logger
+from core.planet_data import PlanetData
 from generation.cellular import simulate_erosion, simulate_tectonics
 from generation.noise_3d import generate_heightmap
 
@@ -20,46 +22,40 @@ class PlanetGenerator:
     and biome calculations in the correct order.
     """
 
-    def __init__(self, seed: int = 42, resolution: int = 1024):
+    def __init__(self, config: PlanetConfig | None = None, **kwargs):
         """
         Initializes the PlanetGenerator.
 
         Args:
-            seed (int): The base seed for procedural generation.
-            resolution (int): The resolution of the generated planet grid.
+            config (PlanetConfig): Generation parameters. If omitted, a default
+                                   PlanetConfig() is used. Keyword arguments
+                                   (seed, subdivisions) are forwarded to PlanetConfig
+                                   for convenience: PlanetGenerator(seed=42, subdivisions=5).
         """
-        self.seed = seed
-        self.resolution = resolution
-        # Note: In a stricter Dependency Injection setup, the generation strategies
-        # (noise functions, erosion functions) could be passed in here.
-        # For now, we use the standard project modules.
+        if config is None:
+            config = PlanetConfig(**kwargs)
+        self.config = config
 
-    def generate(self) -> dict:
+    def generate(self) -> PlanetData:
         """
         Executes the full generation pipeline.
 
         Returns:
-            dict: A dictionary containing the generated planet data
-                  (e.g., grid, heightmap, biome_map).
+            PlanetData: Typed container with vertices, faces, heightmap, and biome_map.
         """
         logger.info(
-            f"Starting planet generation pipeline (Seed: {self.seed}, Resolution: {self.resolution})"
+            f"Starting planet generation pipeline "
+            f"(Seed: {self.config.seed}, Subdivisions: {self.config.subdivisions})"
         )
 
         try:
             # Step 1: Initialize the spherical grid (Icosphere)
             logger.info("[1/4] Initializing spherical grid (Icosphere)...")
-            # Convert abstract resolution to a sane subdivision level (e.g., 4-6)
-            subdivisions = (
-                max(1, min(7, int(self.resolution // 200)))
-                if self.resolution > 10
-                else self.resolution
-            )
-            vertices, faces = create_spherical_grid(subdivisions)
+            vertices, faces = create_spherical_grid(self.config.subdivisions)
 
             # Step 2: Generate base heightmap using 3D noise
             logger.info("[2/4] Generating 3D noise heightmap...")
-            heightmap = generate_heightmap(vertices, amplitude=5,seed=self.seed)
+            heightmap = generate_heightmap(vertices, amplitude=5, seed=self.config.seed)
 
             # Step 3: Apply cellular automata (Tectonics and Erosion)
             logger.info("[3/4] Simulating tectonics and erosion...")
@@ -77,12 +73,12 @@ class PlanetGenerator:
 
             logger.info("✅ Planet generation pipeline completed successfully.")
 
-            return {
-                "vertices": vertices,
-                "faces": faces,
-                "heightmap": heightmap,
-                "biome_map": biome_map,
-            }
+            return PlanetData(
+                vertices=vertices,
+                faces=faces,
+                heightmap=heightmap,
+                biome_map=biome_map,
+            )
 
         except Exception as e:
             logger.error(
