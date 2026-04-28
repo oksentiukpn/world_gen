@@ -55,7 +55,14 @@ class PlanetGenerator:
 
             # Step 2: Generate base heightmap using 3D noise
             logger.info("[2/4] Generating 3D noise heightmap...")
-            heightmap = generate_heightmap(vertices, amplitude=5, seed=self.config.seed)
+            # noise_scale = radius: larger planet → higher noise frequency
+            # → denser, finer terrain features automatically
+            heightmap = generate_heightmap(
+                vertices,
+                amplitude=5,
+                seed=self.config.seed,
+                noise_scale=self.config.radius,
+            )
 
             # Step 3: Apply cellular automata (Tectonics and Erosion)
             logger.info("[3/4] Simulating tectonics and erosion...")
@@ -78,6 +85,7 @@ class PlanetGenerator:
                 faces=faces,
                 heightmap=heightmap,
                 biome_map=biome_map,
+                radius=self.config.radius,
             )
 
         except Exception as e:

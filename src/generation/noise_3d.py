@@ -57,10 +57,12 @@ def fade(x):
     # Формула Кенна Перліна: 6t^5 - 15t^4 + 10t^3
     return x * x * x * (x * (x * 6 - 15) + 10)
 
+
 @njit(fastmath=True)
 def fade_deriv(x):
     df = 30 * x * x * (x * (x - 2) + 1)
     return df
+
 
 @njit(fastmath=True)
 def perlin_noise_3d(x, y, z, seed=0):
@@ -129,16 +131,19 @@ def perlin_noise_with_deriv(x, y, z, seed=0):
 
     center = perlin_noise_3d(x, y, z, seed)
 
-    dx = (perlin_noise_3d(x + eps, y, z, seed) -
-          perlin_noise_3d(x - eps, y, z, seed)) / (2 * eps)
+    dx = (
+        perlin_noise_3d(x + eps, y, z, seed) - perlin_noise_3d(x - eps, y, z, seed)
+    ) / (2 * eps)
 
-    dy = (perlin_noise_3d(x, y + eps, z, seed) -
-          perlin_noise_3d(x, y - eps, z, seed)) / (2 * eps)
+    dy = (
+        perlin_noise_3d(x, y + eps, z, seed) - perlin_noise_3d(x, y - eps, z, seed)
+    ) / (2 * eps)
 
-    dz = (perlin_noise_3d(x, y, z + eps, seed) -
-          perlin_noise_3d(x, y, z - eps, seed)) / (2 * eps)
+    dz = (
+        perlin_noise_3d(x, y, z + eps, seed) - perlin_noise_3d(x, y, z - eps, seed)
+    ) / (2 * eps)
 
-    deriv_mag = math.sqrt(dx*dx + dy*dy + dz*dz)
+    deriv_mag = math.sqrt(dx * dx + dy * dy + dz * dz)
 
     return center, deriv_mag
 
@@ -169,8 +174,8 @@ def fractal_perlin_noise_3d(
     value = 0
     for i in range(octaves):
         octave_seed = seed + i * 1337
-        noise, deriv_mag = (
-            perlin_noise_with_deriv(x * curr_scale, y * curr_scale, z * curr_scale, octave_seed)
+        noise, deriv_mag = perlin_noise_with_deriv(
+            x * curr_scale, y * curr_scale, z * curr_scale, octave_seed
         )
 
         attenuation = 1.0 / (1.0 + deriv_mag * EROSION_STRENGTH)
@@ -184,7 +189,9 @@ def fractal_perlin_noise_3d(
 
 
 @njit(fastmath=True)
-def apply_ridge_noise(x, y, z, scale=0.5, octaves=4, persistence=0.5, lacunarity=2.0, seed=0):
+def apply_ridge_noise(
+    x, y, z, scale=0.5, octaves=4, persistence=0.5, lacunarity=2.0, seed=0
+):
     """
     Generates rigid/ridged multi-fractal noise, which is ideal for creating
     sharp mountain peaks and steep valleys.
@@ -202,18 +209,22 @@ def apply_ridge_noise(x, y, z, scale=0.5, octaves=4, persistence=0.5, lacunarity
         float: The computed ridged noise value.
     """
     v = fractal_perlin_noise_3d(x, y, z, scale, octaves, persistence, lacunarity, seed)
-    return (1.0 - abs(v))**2
+    return (1.0 - abs(v)) ** 2
 
 
 @njit(parallel=True, fastmath=True)
-def generate_heightmap(grid_points, amplitude=1, seed=0):
+def generate_heightmap(grid_points, amplitude=1, seed=0, noise_scale=1.0):
     """
     Generates a complete heightmap for a sphere by evaluating 3D noise
     at each normalized coordinate on the spherical grid.
 
     Args:
         grid_points (numpy.ndarray): An array of 3D vectors representing points on the sphere.
-        seed (int, optional): The master seed for planetary generation. Defaults to 0.
+        amplitude (float): Multiplier applied to all elevation values.
+        seed (int): The master seed for planetary generation.
+        noise_scale (float): Base frequency of the noise.
+                             Higher → denser, finer terrain features.
+                             Lower  → smoother, larger-scale continents.
 
     Returns:
         numpy.ndarray: An array of elevation values corresponding to each grid point.
@@ -227,7 +238,7 @@ def generate_heightmap(grid_points, amplitude=1, seed=0):
             grid_points[i, 0],
             grid_points[i, 1],
             grid_points[i, 2],
-            scale=1,
+            scale=noise_scale,
             octaves=5,
             persistence=0.4,
             lacunarity=2.0,

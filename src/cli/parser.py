@@ -9,12 +9,13 @@ import argparse
 def create_parser() -> argparse.ArgumentParser:
     """
     Creates and configures the argument parser for the Procedural Planet Generator.
-    Sets up available options like seed, resolution, and output format.
 
     Returns:
         argparse.ArgumentParser: The configured argument parser instance.
     """
     parser = argparse.ArgumentParser(description="🌍 Procedural Planet Generator CLI")
+
+    # ── Planet generation ──────────────────────────────────────────────────────
 
     parser.add_argument(
         "--seed",
@@ -41,21 +42,14 @@ def create_parser() -> argparse.ArgumentParser:
         type=float,
         default=1.0,
         help=(
-            "Base radius of the exported planet sphere in output units (default: 1.0). "
-            "Scales the planet size without affecting terrain/mountain height."
+            "Physical radius of the planet (default: 1.0). "
+            "Controls both the output size AND terrain density: "
+            "larger radius → denser, finer terrain features; "
+            "smaller radius → coarse, dramatic terrain (asteroid-like)."
         ),
     )
 
-    parser.add_argument(
-        "--terrain-scale",
-        type=float,
-        default=0.02,
-        dest="terrain_scale",
-        help=(
-            "Height displacement per heightmap unit (default: 0.02). "
-            "Controls how tall mountains are, independently of --radius."
-        ),
-    )
+    # ── Export ─────────────────────────────────────────────────────────────────
 
     parser.add_argument(
         "--format",
@@ -69,7 +63,7 @@ def create_parser() -> argparse.ArgumentParser:
         "--output",
         type=str,
         default="planet.png",
-        help="Output file path for the generated textures or data (default: planet.png)",
+        help="Output file path (default: planet.png)",
     )
 
     return parser

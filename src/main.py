@@ -15,31 +15,28 @@ logger = get_logger(__name__)
 def run_cli(args):
     """
     Executes the planet generator in Command Line Interface (CLI) mode.
-    Generates the procedural planet based on the provided configuration
-    (seed, subdivisions, etc.) and saves the output (e.g., textures, meshes) to disk.
 
     Args:
-        args (argparse.Namespace): The parsed command-line arguments containing
-                                   configuration options.
+        args (argparse.Namespace): The parsed command-line arguments.
     """
     planet_config = PlanetConfig(
         seed=args.seed,
         subdivisions=args.subdivisions,
+        radius=args.radius,
     )
     export_config = ExportConfig(
         fmt=args.format,
         output_path=args.output,
-        radius=args.radius,
-        terrain_scale=args.terrain_scale,
     )
 
     logger.info("🌍 Starting procedural planet generation CLI...")
     logger.info(
-        f"PlanetConfig → Seed: {planet_config.seed} | Subdivisions: {planet_config.subdivisions}"
+        f"PlanetConfig → Seed: {planet_config.seed} | "
+        f"Subdivisions: {planet_config.subdivisions} | "
+        f"Radius: {planet_config.radius}"
     )
     logger.info(
-        f"ExportConfig → Format: {export_config.fmt} | Output: {export_config.output_path} | "
-        f"Radius: {export_config.radius} | TerrainScale: {export_config.terrain_scale}"
+        f"ExportConfig → Format: {export_config.fmt} | Output: {export_config.output_path}"
     )
 
     if planet_config.subdivisions >= 8:

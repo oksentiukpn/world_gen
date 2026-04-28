@@ -14,6 +14,10 @@ from core.planet_data import PlanetData
 
 FALLBACK_COLOR: tuple[int, int, int] = (128, 128, 128)
 
+# How much one heightmap unit displaces a vertex along its normal (in output units).
+# Kept as a fixed internal constant — use PlanetConfig.radius to control terrain feel.
+TERRAIN_DISPLACEMENT_SCALE: float = 0.02
+
 
 def get_color(biome_map: np.ndarray | None, index: int) -> tuple[int, int, int]:
     """

@@ -25,9 +25,12 @@ class PlanetData:
         biome_map (np.ndarray): Per-vertex biome data produced by biome/climate.py.
                                 Shape (V, 3) uint8 RGB once implemented;
                                 shape (V,) int32 zeros until then.
+        radius (float): Physical radius of the planet, copied from PlanetConfig.
+                        Used by exporters to compute final vertex positions.
     """
 
     vertices: np.ndarray
     faces: np.ndarray
     heightmap: np.ndarray
     biome_map: np.ndarray
+    radius: float = 1.0

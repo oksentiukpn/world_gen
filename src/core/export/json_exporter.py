@@ -2,13 +2,21 @@
 JSON exporter — Three.js BufferGeometry flat-array format for the Web GUI.
 
 Vertex position formula:
-    final_pos = vertex_normalized * (radius + h * terrain_scale)
+    final_pos = vertex_normalized * (radius + h * TERRAIN_DISPLACEMENT_SCALE)
+
+radius comes from PlanetData (set at generation time via PlanetConfig).
+TERRAIN_DISPLACEMENT_SCALE is a fixed internal constant.
 """
 
 import json
 
 from core.config import ExportConfig
-from core.export.base import BaseExporter, ensure_extension, get_color
+from core.export.base import (
+    TERRAIN_DISPLACEMENT_SCALE,
+    BaseExporter,
+    ensure_extension,
+    get_color,
+)
 from core.planet_data import PlanetData
 
 
@@ -28,7 +36,7 @@ class JsonExporter(BaseExporter):
         if data.vertices is not None:
             for i in range(data.vertices.shape[0]):
                 h = float(data.heightmap[i]) if data.heightmap is not None else 0.0
-                dist = config.radius + h * config.terrain_scale
+                dist = data.radius + h * TERRAIN_DISPLACEMENT_SCALE
 
                 flat_vertices.extend(
                     [

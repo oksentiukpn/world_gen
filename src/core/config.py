@@ -11,7 +11,7 @@ from dataclasses import dataclass
 @dataclass
 class PlanetConfig:
     """
-    Parameters that control procedural planet generation.
+    Parameters that describe the planet being generated.
 
     Attributes:
         seed (int): Master seed for all noise and random operations.
@@ -23,29 +23,31 @@ class PlanetConfig:
                       5 →  10 242 vertices  (default, good balance)
                       7 → 163 842 vertices
                       9 → 2 621 442 vertices (very high detail, slow)
+        radius (float): Physical radius of the planet in output units (default 1.0).
+                    This single value controls two things at once:
+                      - Noise frequency at generation time (noise_scale = radius),
+                        so larger planets automatically have denser, finer terrain.
+                      - Actual sphere size at export time.
+                    Effect on terrain feel:
+                      radius < 1  → dramatic, coarse terrain (asteroid-like)
+                      radius = 1  → default balance
+                      radius > 1  → fine, dense detail (large realistic world)
     """
 
     seed: int = 42
     subdivisions: int = 5
+    radius: float = 1.0
 
 
 @dataclass
 class ExportConfig:
     """
-    Parameters that control how a generated planet is serialized to disk.
+    Parameters that control how a generated planet is written to disk.
 
     Attributes:
         fmt (str): Output format — 'png', 'obj', or 'json'.
         output_path (str): Destination file path (extension auto-appended if missing).
-        radius (float): Base radius of the planet sphere in output units (default 1.0).
-                        Scales the planet size without affecting terrain height.
-        terrain_scale (float): How much one unit of heightmap displaces a vertex
-                               in output units (default 0.02).
-                               Independent from radius — changing radius does NOT
-                               change mountain height unless you change this too.
     """
 
     fmt: str = "png"
     output_path: str = "planet.png"
-    radius: float = 1.0
-    terrain_scale: float = 0.02
