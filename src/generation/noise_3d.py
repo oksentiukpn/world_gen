@@ -212,40 +212,119 @@ def apply_ridge_noise(
     return (1.0 - abs(v)) ** 2
 
 
+@njit(fastmath=True)
+def domain_warp(x, y, z, warp_scale, warp_strength, seed):
+    """
+    Applies domain warping to coordinates (x, y, z).
+
+    Instead of sampling noise at (x, y, z) directly, we first compute
+    a displacement vector (dx, dy, dz) using a separate layer of noise,
+    then sample the main noise at the warped coordinates.
+
+    This breaks the "too perfect" symmetry of plain fBm and produces
+    organic-looking coastlines, river deltas, and fjords.
+
+    Args:
+        x, y, z (float): Original 3D coordinates on the unit sphere.
+        warp_scale (float): Frequency of the warping noise (lower = broader distortions).
+        warp_strength (float): How far the coordinates are displaced.
+        seed (int): Seed for the warp noise (use a different one from the main noise).
+
+    Returns:
+        tuple[float, float, float]: Warped (x, y, z) coordinates.
+    """
+    # Sample three independent noise values to build the displacement vector.
+    # The large offsets (1.7, 9.2, etc.) ensure the three axes are decorrelated.
+    dx = fractal_perlin_noise_3d(
+        x + 1.7,
+        y + 9.2,
+        z + 3.4,
+        scale=warp_scale,
+        octaves=4,
+        persistence=0.5,
+        lacunarity=2.0,
+        seed=seed,
+    )
+    dy = fractal_perlin_noise_3d(
+        x + 8.3,
+        y + 2.8,
+        z + 5.9,
+        scale=warp_scale,
+        octaves=4,
+        persistence=0.5,
+        lacunarity=2.0,
+        seed=seed + 1,
+    )
+    dz = fractal_perlin_noise_3d(
+        x + 5.1,
+        y + 4.6,
+        z + 7.2,
+        scale=warp_scale,
+        octaves=4,
+        persistence=0.5,
+        lacunarity=2.0,
+        seed=seed + 2,
+    )
+
+    # Remap from [0, 1] → [-1, 1] so displacement is symmetric around origin
+    dx = (dx - 0.5) * 2.0 * warp_strength
+    dy = (dy - 0.5) * 2.0 * warp_strength
+    dz = (dz - 0.5) * 2.0 * warp_strength
+
+    return x + dx, y + dy, z + dz
+
+
 @njit(parallel=True, fastmath=True)
 def generate_heightmap(grid_points, amplitude=1, seed=0, noise_scale=1.0):
     """
-    Generates a complete heightmap for a sphere by evaluating 3D noise
-    at each normalized coordinate on the spherical grid.
+    Generates a complete heightmap for a sphere by evaluating domain-warped
+    3D noise at each normalized coordinate on the spherical grid.
+
+    Domain warping displaces each sample point using a separate noise layer
+    before evaluating the main terrain noise. This produces organic-looking
+    coastlines and breaks the "too symmetric" look of plain fBm.
 
     Args:
         grid_points (numpy.ndarray): An array of 3D vectors representing points on the sphere.
         amplitude (float): Multiplier applied to all elevation values.
         seed (int): The master seed for planetary generation.
-        noise_scale (float): Base frequency of the noise.
+        noise_scale (float): Base frequency of the main terrain noise.
                              Higher → denser, finer terrain features.
                              Lower  → smoother, larger-scale continents.
 
     Returns:
         numpy.ndarray: An array of elevation values corresponding to each grid point.
     """
+    # Warp parameters: low frequency for broad, continental-scale distortions.
+    # Strength is relative to the coordinate scale on the unit sphere.
+    WARP_SCALE = noise_scale * 0.5
+    WARP_STRENGTH = 0.4
+    WARP_SEED = seed + 999
+
+    WATER_LEVEL = 0.275
 
     n_points = grid_points.shape[0]
     elevations = np.empty(n_points, dtype=np.float32)
 
     for i in prange(n_points):
+        x = grid_points[i, 0]
+        y = grid_points[i, 1]
+        z = grid_points[i, 2]
+
+        # Step 1: warp the coordinates
+        wx, wy, wz = domain_warp(x, y, z, WARP_SCALE, WARP_STRENGTH, WARP_SEED)
+
+        # Step 2: sample main terrain noise at warped position
         elevations[i] = fractal_perlin_noise_3d(
-            grid_points[i, 0],
-            grid_points[i, 1],
-            grid_points[i, 2],
+            wx,
+            wy,
+            wz,
             scale=noise_scale,
             octaves=5,
             persistence=0.4,
             lacunarity=2.0,
             seed=seed,
         )
-
-    WATER_LEVEL = 0.275
 
     return np.maximum(elevations, WATER_LEVEL) * amplitude
     # return elevations * amplitude
