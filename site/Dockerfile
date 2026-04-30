@@ -13,4 +13,4 @@ COPY . .
 
 EXPOSE 5000
 
-ENTRYPOINT ["gunicorn", "--access-logfile", "-", "--error-logfile", "-", "-b", "0.0.0.0:5000", "run:app"]
+ENTRYPOINT ["gunicorn", "-k", "eventlet", "-w", "1", "--access-logfile", "-", "--error-logfile", "-", "-b", "0.0.0.0:5000", "run:app"]

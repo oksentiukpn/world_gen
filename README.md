@@ -8,6 +8,11 @@ or
 ```bash
 python src/main.py --seed 777 --radius 3 --subdivisions 7 --format obj --output my_planet
 ```
+запуск сайту (http://localhost:5000) 
+```bash
+cd site
+docker compose up --build
+```
 
 # 🌍 Procedural Planet Generator
 

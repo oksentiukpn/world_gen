@@ -1,10 +1,11 @@
 services:
   web:
     build: .
-    image: flask-web
+    image: genplan
     restart: always
     volumes:
       - .:/app:z
+      - ../src:/src:z
     environment:
       SECRET_KEY: ${SECRET_KEY}
     ports:

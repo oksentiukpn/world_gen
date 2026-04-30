@@ -3,6 +3,8 @@ import logging
 from config import Config
 from flask import Flask
 
+from app.sockets import socketio
+
 
 def create_app(config=Config):
     app = Flask(__name__)
@@ -15,5 +17,8 @@ def create_app(config=Config):
     from app.main.routes import main
 
     app.register_blueprint(main)
+
+    # Initialize socketio with the app
+    socketio.init_app(app)
 
     return app
