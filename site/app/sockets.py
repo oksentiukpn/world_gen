@@ -36,7 +36,6 @@ def handle_generate_planet(data):
     sharpness_strength = float(data.get("sharpness_strength", 1))
 
     # Cap subdivisions to avoid crashing the server/browser during real-time preview
-        subdivisions = 6
     if subdivisions > 8:
         subdivisions = 8
 
