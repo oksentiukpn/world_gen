@@ -27,12 +27,31 @@ def handle_generate_planet(data):
     seed = int(data.get("seed", 42))
     radius = float(data.get("radius", 10.0))
     subdivisions = int(data.get("subdivisions", 4))
+    noise_scale = float(data.get("noise_scale", 1))
+    octaves = int(data.get("octaves", 4))
+    persistence = float(data.get("persistence", 0.4))
+    lacunarity = float(data.get("lacunarity", 2))
+    amplitude = float(data.get("amplitude", 1))
+    water_level = float(data.get("water_level", 0.375))
+    sharpness_strength = float(data.get("sharpness_strength", 1))
 
     # Cap subdivisions to avoid crashing the server/browser during real-time preview
-    if subdivisions > 6:
         subdivisions = 6
+    if subdivisions > 8:
+        subdivisions = 8
 
-    config = PlanetConfig(seed=seed, radius=radius, subdivisions=subdivisions)
+    config = PlanetConfig(
+        seed=seed,
+        radius=radius,
+        subdivisions=subdivisions,
+        noise_scale=noise_scale,
+        octaves=octaves,
+        persistence=persistence,
+        lacunarity=lacunarity,
+        amplitude=amplitude,
+        water_level=water_level,
+        sharpness_strength=sharpness_strength
+    )
 
     try:
         # Step 1: Base Mesh
@@ -60,9 +79,14 @@ def handle_generate_planet(data):
 
         heightmap = generate_heightmap(
             vertices,
-            amplitude=5.0,
             seed=config.seed,
-            noise_scale=config.radius,
+            noise_scale=config.noise_scale,
+            octaves=config.octaves,
+            persistence=config.persistence,
+            lacunarity=config.lacunarity,
+            amplitude=config.amplitude,
+            water_level=config.water_level,
+            sharpness_strength=config.sharpness_strength
         )
 
         h_bytes = heightmap.astype(np.float32).tobytes()
@@ -94,11 +118,11 @@ def handle_generate_planet(data):
         )
         socketio.sleep(0)
 
-        biome_map = generate_biome_map(heightmap, vertices)
+        # biome_map = generate_biome_map(heightmap, vertices)
 
-        b_bytes = biome_map.astype(np.uint8).tobytes()
-        emit("step_biome", {"biome_map": b_bytes})
-        socketio.sleep(0.1)
+        # b_bytes = biome_map.astype(np.uint8).tobytes()
+        # emit("step_biome", {"biome_map": b_bytes})
+        # socketio.sleep(0.1)
 
         emit("generation_complete", {"message": "Planet generated successfully!"})
 

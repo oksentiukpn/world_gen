@@ -15,6 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const radiusInput = document.getElementById('radius');
   const radiusNumInput = document.getElementById('radiusNum');
   const subdivisionsInput = document.getElementById('subdivisions');
+  const noiseScaleInput = document.getElementById('noise_scale');
+  const octavesInput = document.getElementById('octaves');
+  const persistenceInput = document.getElementById('persistence');
+  const lacunarityInput = document.getElementById('lacunarity');
+  const amplitudeInput = document.getElementById('amplitude');
+  const water_levelInput = document.getElementById('water_level');
+  const sharpnessStrengthInput = document.getElementById('sharpness_strength');
 
   // Sync radius slider and number input
   radiusInput.addEventListener('input', (e) => {
@@ -29,7 +36,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const config = {
       seed: parseInt(seedInput.value) || 42,
       radius: parseFloat(radiusNumInput.value) || 10,
-      subdivisions: parseInt(subdivisionsInput.value) || 4
+      subdivisions: parseInt(subdivisionsInput.value) || 4,
+      noise_scale: parseFloat(noiseScaleInput.value) || 1,
+      octaves: parseInt(octavesInput.value) || 4,
+      persistence: parseFloat(persistenceInput.value) || 0.4,
+      lacunarity: parseFloat(lacunarityInput.value) || 2,
+      amplitude: parseFloat(amplitudeInput.value) || 1,
+      water_level: parseFloat(water_levelInput.value) || 0.375,
+      sharpness_strength: parseFloat(sharpnessStrengthInput.value) || 1
     };
 
     generateBtn.disabled = true;
