@@ -40,7 +40,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--radius",
         type=float,
-        default=1.0,
+        default=2.0,
         help=(
             "Physical radius of the planet (default: 1.0). "
             "Controls both the output size AND terrain density: "
@@ -55,7 +55,7 @@ def create_parser() -> argparse.ArgumentParser:
         "--format",
         type=str,
         choices=["png", "obj", "json"],
-        default="png",
+        default="obj",
         help="Output format for the generated planet (png, obj, or json) (default: png)",
     )
 
