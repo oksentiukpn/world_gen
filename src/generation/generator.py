@@ -59,9 +59,14 @@ class PlanetGenerator:
             # → denser, finer terrain features automatically
             heightmap = generate_heightmap(
                 vertices,
-                amplitude=5,
                 seed=self.config.seed,
-                noise_scale=self.config.radius,
+                noise_scale=self.config.noise_scale,
+                octaves=self.config.octaves,
+                persistence=self.config.persistence,
+                lacunarity=self.config.lacunarity,
+                amplitude=self.config.amplitude,
+                water_level=self.config.water_level,
+                sharpness_strength=self.config.sharpness_strength
             )
 
             # Step 3: Apply cellular automata (Tectonics and Erosion)
