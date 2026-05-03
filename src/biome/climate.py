@@ -97,16 +97,13 @@ def generate_biome_map(heightmap, vertices):
     num_vertices = heightmap.shape[0]
     biome_map = np.zeros((num_vertices, 3), dtype=np.uint8)
 
-    # Find the bounds of the actual heightmap
     min_elevation = np.min(heightmap)
     max_elevation = np.max(heightmap)
     elevation_range = max_elevation - min_elevation
 
-    # Fallback to prevent division by zero in case of a perfectly smooth sphere
     if elevation_range == 0.0:
         elevation_range = 1.0
 
-    # Iterate over all vertices in parallel
     for i in prange(num_vertices):
         y_coord = vertices[i, 1]
 
@@ -114,7 +111,6 @@ def generate_biome_map(heightmap, vertices):
         raw_elevation = heightmap[i]
         normalized_elevation = (raw_elevation - min_elevation) / elevation_range
 
-        # Pass the normalized elevation to your climate functions
         temp = calculate_temperature(y_coord, normalized_elevation)
         moist = calculate_moisture(normalized_elevation)
 
