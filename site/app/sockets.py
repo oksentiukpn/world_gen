@@ -49,7 +49,7 @@ def handle_generate_planet(data):
         lacunarity=lacunarity,
         amplitude=amplitude,
         water_level=water_level,
-        sharpness_strength=sharpness_strength
+        sharpness_strength=sharpness_strength,
     )
 
     try:
@@ -85,7 +85,7 @@ def handle_generate_planet(data):
             lacunarity=config.lacunarity,
             amplitude=config.amplitude,
             water_level=config.water_level,
-            sharpness_strength=config.sharpness_strength
+            sharpness_strength=config.sharpness_strength,
         )
 
         h_bytes = heightmap.astype(np.float32).tobytes()
@@ -117,11 +117,11 @@ def handle_generate_planet(data):
         )
         socketio.sleep(0)
 
-        # biome_map = generate_biome_map(heightmap, vertices)
+        biome_map = generate_biome_map(heightmap, vertices)
 
-        # b_bytes = biome_map.astype(np.uint8).tobytes()
-        # emit("step_biome", {"biome_map": b_bytes})
-        # socketio.sleep(0.1)
+        b_bytes = biome_map.astype(np.uint8).tobytes()
+        emit("step_biome", {"biome_map": b_bytes})
+        socketio.sleep(0.1)
 
         emit("generation_complete", {"message": "Planet generated successfully!"})
 

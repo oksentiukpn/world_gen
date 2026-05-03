@@ -19,9 +19,6 @@ INSTRUCTIONS FOR PARTICIPANT 2 (LOGIC / BIOMES):
 import numpy as np
 from numba import njit, prange
 
-import numpy as np
-from numba import njit, prange
-
 BLUE = (52, 140, 206)
 BLUE_GREY = (182, 199, 204)
 DARK_GREEN = (60, 100, 85)
@@ -31,6 +28,7 @@ LIGHT_GREEN = (152, 200, 115)
 GOLDEN_BROWN = (210, 180, 115)
 WHITE = (245, 250, 255)
 GREY = (145, 150, 155)
+
 
 @njit(fastmath=True)
 def calculate_temperature(y_coord, elevation):
@@ -87,6 +85,7 @@ def determine_color(temperature, humidity, elevation):
             return GOLDEN_BROWN
         else:
             return PALE_SAND
+
 
 @njit(parallel=True, fastmath=True)
 def generate_biome_map(heightmap, vertices):
