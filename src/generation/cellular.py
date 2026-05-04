@@ -79,9 +79,23 @@ def simulate_tectonics(heightmap, adjacency_list, iterations, plate_count, radiu
     dist_conv = np.full(num_vertices, 999.0, dtype=np.float32)
     dist_div = np.full(num_vertices, 999.0, dtype=np.float32)
 
-    # We use a lower frequency noise to determine where boundaries actually form mountains
-    # This prevents the mountains from looking like they just outline the plates.
-    boundary_mask = np.random.rand(num_vertices)
+    # Generate CA-based active zones to chunk the fault lines into isolated mountain ranges.
+    # This prevents the mountains from tracing the entire plate outline.
+    active_zones = np.zeros(num_vertices, dtype=np.bool_)
+    num_zones = max(10, int(25 * radius))
+    for _ in range(num_zones):
+        active_zones[np.random.randint(0, num_vertices)] = True
+
+    zone_expansion = max(5, int(10 * radius))
+    for _ in range(zone_expansion):
+        new_active = active_zones.copy()
+        for i in prange(num_vertices):
+            if active_zones[i]:
+                for j in range(6):
+                    n = adjacency_list[i, j]
+                    if n != -1:
+                        new_active[n] = True
+        active_zones = new_active
 
     for i in prange(num_vertices):
         my_plate = plate_ids[i]
@@ -90,8 +104,8 @@ def simulate_tectonics(heightmap, adjacency_list, iterations, plate_count, radiu
             if neighbor != -1:
                 neighbor_plate = plate_ids[neighbor]
                 if my_plate != neighbor_plate:
-                    # Only ~40% of the boundary actually forms a mountain range, breaking long lines into segments
-                    if boundary_mask[i] < 0.4:
+                    # Only form mountains if the fault line passes through an active zone
+                    if active_zones[i]:
                         min_p = min(my_plate, neighbor_plate)
                         max_p = max(my_plate, neighbor_plate)
                         interaction = (min_p * 7 + max_p * 13) % 3
