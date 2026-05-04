@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const radiusInput = document.getElementById('radius');
   const radiusNumInput = document.getElementById('radiusNum');
   const subdivisionsInput = document.getElementById('subdivisions');
+  const subdivisionsNumInput = document.getElementById('subdivisionsNum');
   const noiseScaleInput = document.getElementById('noise_scale');
   const octavesInput = document.getElementById('octaves');
   const persistenceInput = document.getElementById('persistence');
@@ -32,11 +33,20 @@ document.addEventListener('DOMContentLoaded', () => {
     radiusInput.value = e.target.value;
   });
 
+  // Sync subdivisions slider and number input
+  subdivisionsInput.addEventListener('input', (e) => {
+    subdivisionsNumInput.value = e.target.value;
+  });
+
+  subdivisionsNumInput.addEventListener('input', (e) => {
+    subdivisionsInput.value = e.target.value;
+  });
+
   generateBtn.addEventListener('click', () => {
     const config = {
       seed: parseInt(seedInput.value) || 42,
       radius: parseFloat(radiusNumInput.value) || 10,
-      subdivisions: parseInt(subdivisionsInput.value) || 4,
+      subdivisions: parseInt(subdivisionsNumInput.value) || 4,
       noise_scale: parseFloat(noiseScaleInput.value) || 1,
       octaves: parseInt(octavesInput.value) || 4,
       persistence: parseFloat(persistenceInput.value) || 0.4,

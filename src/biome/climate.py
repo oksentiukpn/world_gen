@@ -64,7 +64,7 @@ def determine_color(temperature, humidity, elevation):
          5=Grassland, 6=Savanna, 7=Rainforest, 8=Snow, 9=Rock
     """
 
-    if elevation <= 0:
+    if elevation <= 0.001:
         return BLUE
 
     if temperature < -5:
@@ -88,34 +88,49 @@ def determine_color(temperature, humidity, elevation):
 
 
 @njit(parallel=True, fastmath=True)
-def generate_biome_map(heightmap, vertices):
+def generate_biome_map(heightmap, vertices, water_level=0.275):
     """
     Orchestrates the generation of a full biome map for all vertices.
     Normalizes the heightmap dynamically so arbitrary elevation ranges work perfectly.
+    Guarantees that `water_level` proportion of the planet is water.
     """
     num_vertices = heightmap.shape[0]
     biome_map = np.zeros((num_vertices, 3), dtype=np.uint8)
 
-    min_elevation = np.min(heightmap)
-    max_elevation = np.max(heightmap)
-    elevation_range = max_elevation - min_elevation
+    # Use a robust percentile approach for the water threshold
+    sorted_heights = np.sort(heightmap)
+    water_index = int(num_vertices * water_level)
+    if water_index >= num_vertices:
+        water_index = num_vertices - 1
+    actual_water_height = sorted_heights[water_index]
 
-    if elevation_range == 0.0:
+    max_elevation = np.max(heightmap)
+    elevation_range = max_elevation - actual_water_height
+
+    if elevation_range <= 0.0:
         elevation_range = 1.0
 
     for i in prange(num_vertices):
         y_coord = vertices[i, 1]
-
-        # Normalize the current elevation to a 0.0 -> 1.0 scale
         raw_elevation = heightmap[i]
-        normalized_elevation = (raw_elevation - min_elevation) / elevation_range
 
-        temp = calculate_temperature(y_coord, normalized_elevation)
-        moist = calculate_moisture(normalized_elevation)
+        if raw_elevation <= actual_water_height:
+            # It's water
+            biome_map[i, 0] = BLUE[0]
+            biome_map[i, 1] = BLUE[1]
+            biome_map[i, 2] = BLUE[2]
+        else:
+            # It's land, normalize from water_level up to max_elevation
+            normalized_elevation = (
+                raw_elevation - actual_water_height
+            ) / elevation_range
 
-        r, g, b = determine_color(temp, moist, normalized_elevation)
-        biome_map[i, 0] = r
-        biome_map[i, 1] = g
-        biome_map[i, 2] = b
+            temp = calculate_temperature(y_coord, normalized_elevation)
+            moist = calculate_moisture(normalized_elevation)
+
+            r, g, b = determine_color(temp, moist, normalized_elevation)
+            biome_map[i, 0] = r
+            biome_map[i, 1] = g
+            biome_map[i, 2] = b
 
     return biome_map

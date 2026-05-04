@@ -150,7 +150,15 @@ def perlin_noise_with_deriv(x, y, z, seed=0):
 
 @njit(fastmath=True)
 def fractal_perlin_noise_3d(
-    x, y, z, scale=0.5, octaves=4, persistence=0.5, lacunarity=2.0, seed=0, sharpness_strength = 0
+    x,
+    y,
+    z,
+    scale=0.5,
+    octaves=4,
+    persistence=0.5,
+    lacunarity=2.0,
+    seed=0,
+    sharpness_strength=0,
 ):
     """
     Generates fractal terrain noise using Fractional Brownian Motion (fBm)
@@ -274,7 +282,17 @@ def apply_ridge_noise(
 
 
 @njit(parallel=True, fastmath=True)
-def generate_heightmap(grid_points, noise_scale=1.0, octaves=5, persistence=0.4, lacunarity=2, amplitude=0, water_level=0.275, seed=0, sharpness_strength=0):
+def generate_heightmap(
+    grid_points,
+    noise_scale=1.0,
+    octaves=5,
+    persistence=0.4,
+    lacunarity=2,
+    amplitude=0,
+    water_level=0.275,
+    seed=0,
+    sharpness_strength=0,
+):
     """
     Generates a complete heightmap for a sphere by evaluating domain-warped
     3D noise at each normalized coordinate on the spherical grid.
@@ -321,7 +339,7 @@ def generate_heightmap(grid_points, noise_scale=1.0, octaves=5, persistence=0.4,
             persistence=persistence,
             lacunarity=lacunarity,
             seed=seed,
-            sharpness_strength=sharpness_strength
+            sharpness_strength=sharpness_strength,
         )
 
     return np.maximum(elevations, water_level) * amplitude

@@ -14,14 +14,14 @@ INSTRUCTIONS FOR PARTICIPANT 2 (LOGIC / CELLULAR AUTOMATA):
    and use `prange` instead of `range` to make the simulation run in real-time.
 """
 
+import math
+
 import numpy as np
 from numba import njit, prange
 
 
-# TIP: Uncomment the @njit decorator below when you finish writing the logic
-# to make it run 100x faster!
-# @njit(parallel=True, fastmath=True)
-def simulate_tectonics(heightmap, adjacency_list, iterations, plate_count):
+@njit(parallel=True, fastmath=True)
+def simulate_tectonics(heightmap, adjacency_list, iterations, plate_count, radius=1.0):
     """
     Simulates tectonic plate movements to create mountain ranges and ocean trenches.
 
@@ -30,41 +30,126 @@ def simulate_tectonics(heightmap, adjacency_list, iterations, plate_count):
         adjacency_list (numpy.ndarray): 2D array (shape V x 6) containing neighbor indices.
         iterations (int): The number of simulation steps to run.
         plate_count (int): The number of initial tectonic plates to generate.
+        radius (float): The radius of the planet.
 
     Returns:
         numpy.ndarray: The modified heightmap with updated elevations.
     """
-    # TODO (Participant 2):
-    # 1. Randomly pick `plate_count` vertex indices to be the "seeds" of plates.
-    # 2. Grow the plates outward using a breadth-first approach via adjacency_list.
-    # 3. Determine movement vectors for each plate.
-    # 4. Where plates collide (converge), increase heightmap (mountains).
-    # 5. Where plates pull apart (diverge), decrease heightmap (trenches).
+    num_vertices = len(heightmap)
+    plate_ids = np.zeros(num_vertices, dtype=np.int32)
 
-    return heightmap
+    for i in range(1, plate_count + 1):
+        seed_idx = np.random.randint(0, num_vertices)
+        plate_ids[seed_idx] = i
 
+    # Grow the plates outward using a cellular automata approach with randomness for organic shapes
+    # Pre-assign a "growth resistance" to each vertex to make the expansion highly irregular.
+    # This forces plates to flow *around* highly resistant nodes, creating deeply jagged, crooked faults.
+    resistance = np.random.rand(num_vertices) * 0.90
 
-# @njit(parallel=True, fastmath=True)
-def simulate_erosion(heightmap, adjacency_list, iterations, erosion_rate):
-    """
-    Applies hydraulic and thermal erosion to the terrain using cellular automata,
-    smoothing sharp cliffs and creating river valleys along the graph edges.
+    unassigned_count = num_vertices - plate_count
+    while unassigned_count > 0:
+        new_plate_ids = plate_ids.copy()
+        for i in prange(num_vertices):
+            if plate_ids[i] == 0:
+                # Only attempt to claim if we overcome resistance
+                if np.random.rand() > resistance[i]:
+                    valid_count = 0
+                    valid_plates = np.zeros(6, dtype=np.int32)
 
-    Args:
-        heightmap (numpy.ndarray): 1D array of current elevations.
-        adjacency_list (numpy.ndarray): 2D array (shape V x 6) containing neighbor indices.
-        iterations (int): The number of erosion cycles to simulate.
-        erosion_rate (float): The intensity of the erosion applied per step.
+                    for j in range(6):
+                        neighbor = adjacency_list[i, j]
+                        if neighbor != -1 and plate_ids[neighbor] != 0:
+                            valid_plates[valid_count] = plate_ids[neighbor]
+                            valid_count += 1
 
-    Returns:
-        numpy.ndarray: The eroded heightmap.
-    """
-    # TODO (Participant 2):
-    # 1. Loop `iterations` times.
-    # 2. In each iteration, loop through all vertices (prange).
-    # 3. For each vertex, find its lowest neighbor in `adjacency_list`.
-    # 4. If the height difference is large enough, move some "soil" (height)
-    #    from the current vertex to the lower neighbor.
+                    if valid_count > 0:
+                        # Pick a random valid neighbor to inherit from
+                        chosen_idx = np.random.randint(0, valid_count)
+                        new_plate_ids[i] = valid_plates[chosen_idx]
+
+        unassigned_count = 0
+        for i in range(num_vertices):
+            if new_plate_ids[i] == 0:
+                unassigned_count += 1
+
+        plate_ids = new_plate_ids
+
+    # Identify plate boundaries
+    dist_conv = np.full(num_vertices, 999.0, dtype=np.float32)
+    dist_div = np.full(num_vertices, 999.0, dtype=np.float32)
+
+    # We use a lower frequency noise to determine where boundaries actually form mountains
+    # This prevents the mountains from looking like they just outline the plates.
+    boundary_mask = np.random.rand(num_vertices)
+
+    for i in prange(num_vertices):
+        my_plate = plate_ids[i]
+        for j in range(6):
+            neighbor = adjacency_list[i, j]
+            if neighbor != -1:
+                neighbor_plate = plate_ids[neighbor]
+                if my_plate != neighbor_plate:
+                    # Only ~40% of the boundary actually forms a mountain range, breaking long lines into segments
+                    if boundary_mask[i] < 0.4:
+                        min_p = min(my_plate, neighbor_plate)
+                        max_p = max(my_plate, neighbor_plate)
+                        interaction = (min_p * 7 + max_p * 13) % 3
+
+                        if interaction == 1:
+                            dist_conv[i] = 0.0
+                        elif interaction == 0:
+                            dist_div[i] = 0.0
+
+    # Cellular Automata Distance Transform (flood fill distances)
+    # Scale max_dist by radius so mountains stay proportionally wide but not overly massive
+    max_dist = max(2.0, radius * 3.0)
+    for _ in range(int(max_dist)):
+        new_dist_conv = dist_conv.copy()
+        new_dist_div = dist_div.copy()
+        for i in prange(num_vertices):
+            for j in range(6):
+                neighbor = adjacency_list[i, j]
+                if neighbor != -1:
+                    if dist_conv[neighbor] + 1 < new_dist_conv[i]:
+                        new_dist_conv[i] = dist_conv[neighbor] + 1
+                    if dist_div[neighbor] + 1 < new_dist_div[i]:
+                        new_dist_div[i] = dist_div[neighbor] + 1
+        dist_conv = new_dist_conv
+        dist_div = new_dist_div
+
+    # Apply vast, sweeping height changes based on distance
+    for i in prange(num_vertices):
+        # Convergent: Wide, majestic mountains
+        if dist_conv[i] < max_dist:
+            normalized_dist = dist_conv[i] / max_dist
+            # Cosine falloff for smooth, natural bell curve (1.0 at center, 0.0 at edge)
+            falloff = 0.5 * (1.0 + math.cos(normalized_dist * math.pi))
+            # Random variation for rugged foothills
+            noise = 1.0 + (np.random.rand() * 0.6 - 0.3)
+            # Uplift
+            heightmap[i] += 4.0 * falloff * noise
+
+        # Divergent: Deep, wide oceanic trenches
+        if dist_div[i] < max_dist / 2:
+            normalized_dist = dist_div[i] / (max_dist / 2.0)
+            falloff = 0.5 * (1.0 + math.cos(normalized_dist * math.pi))
+            heightmap[i] -= 1.5 * falloff
+
+    # Final overall thermal erosion to seamlessly blend the huge ranges into the noise
+    for _ in range(3):
+        smoothed_heightmap = heightmap.copy()
+        for i in prange(num_vertices):
+            total_h = heightmap[i]
+            count = 1
+            for j in range(6):
+                neighbor = adjacency_list[i, j]
+                if neighbor != -1:
+                    total_h += heightmap[neighbor]
+                    count += 1
+            # 70% original, 30% neighbors for a buttery smooth blend
+            smoothed_heightmap[i] = heightmap[i] * 0.7 + (total_h / count) * 0.3
+        heightmap = smoothed_heightmap
 
     return heightmap
 

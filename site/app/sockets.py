@@ -13,7 +13,7 @@ sys.path.insert(
 from biome.climate import generate_biome_map
 from core.config import PlanetConfig
 from core.fast_types import build_adjacency_list, create_spherical_grid
-from generation.cellular import simulate_erosion, simulate_tectonics
+from generation.cellular import simulate_tectonics
 from generation.noise_3d import generate_heightmap
 
 socketio = SocketIO(cors_allowed_origins="*")
@@ -95,16 +95,17 @@ def handle_generate_planet(data):
         # Step 3: Erosion and Tectonics
         emit(
             "step_progress",
-            {"step": 3, "message": "Simulating tectonics and erosion..."},
+            {"step": 3, "message": "Simulating tectonics"},
         )
         socketio.sleep(0)
 
         adjacency_list = build_adjacency_list(vertices.shape[0], faces)
         heightmap = simulate_tectonics(
-            heightmap, adjacency_list, iterations=10, plate_count=15
-        )
-        heightmap = simulate_erosion(
-            heightmap, adjacency_list, iterations=5, erosion_rate=0.01
+            heightmap,
+            adjacency_list,
+            iterations=10,
+            plate_count=15,
+            radius=config.radius,
         )
 
         h_refined_bytes = heightmap.astype(np.float32).tobytes()
