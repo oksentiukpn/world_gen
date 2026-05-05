@@ -9,7 +9,7 @@ from core.config import PlanetConfig
 from core.fast_types import build_adjacency_list, create_spherical_grid
 from core.logger import get_logger
 from core.planet_data import PlanetData
-from generation.cellular import simulate_erosion, simulate_tectonics
+from generation.cellular import simulate_tectonics
 from generation.noise_3d import generate_heightmap
 
 logger = get_logger(__name__)
@@ -66,22 +66,25 @@ class PlanetGenerator:
                 lacunarity=self.config.lacunarity,
                 amplitude=self.config.amplitude,
                 water_level=self.config.water_level,
-                sharpness_strength=self.config.sharpness_strength
+                sharpness_strength=self.config.sharpness_strength,
             )
 
-            # Step 3: Apply cellular automata (Tectonics and Erosion)
-            logger.info("[3/4] Simulating tectonics and erosion...")
+            # Step 3: Apply cellular automata (Tectonics)
+            logger.info("[3/4] Simulating tectonics...")
             adjacency_list = build_adjacency_list(vertices.shape[0], faces)
             heightmap = simulate_tectonics(
-                heightmap, adjacency_list, iterations=10, plate_count=15
-            )
-            heightmap = simulate_erosion(
-                heightmap, adjacency_list, iterations=5, erosion_rate=0.01
+                heightmap,
+                adjacency_list,
+                iterations=10,
+                plate_count=15,
+                radius=self.config.radius,
             )
 
             # Step 4: Calculate climate and biomes
             logger.info("[4/4] Calculating climate matrices and biomes...")
-            biome_map = generate_biome_map(heightmap, vertices)
+            biome_map = generate_biome_map(
+                heightmap, vertices, water_level=self.config.water_level
+            )
 
             logger.info("✅ Planet generation pipeline completed successfully.")
 
