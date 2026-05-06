@@ -23,6 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const amplitudeInput = document.getElementById('amplitude');
   const water_levelInput = document.getElementById('water_level');
   const sharpnessStrengthInput = document.getElementById('sharpness_strength');
+  const plateIterationsInput = document.getElementById('plate_iterations');
+  const plateCountInput = document.getElementById('plate_count');
+  const rangeRadiusInput = document.getElementById('range_radius');
+  const rangeAmplitudeInput = document.getElementById('range_amplitude');
+
 
   // Sync radius slider and number input
   radiusInput.addEventListener('input', (e) => {
@@ -53,7 +58,11 @@ document.addEventListener('DOMContentLoaded', () => {
       lacunarity: parseFloat(lacunarityInput.value) || 2,
       amplitude: parseFloat(amplitudeInput.value) || 1,
       water_level: parseFloat(water_levelInput.value) || 0.375,
-      sharpness_strength: parseFloat(sharpnessStrengthInput.value) || 1
+      sharpness_strength: parseFloat(sharpnessStrengthInput.value) || 1,
+      plate_iterations: parseInt(plateIterationsInput.value) || 1,
+      plate_count: parseInt(plateCountInput.value) || 1,
+      range_radius: parseFloat(rangeRadiusInput.value) || 1,
+      range_amplitude: parseFloat(rangeAmplitudeInput.value) || 1,
     };
 
     generateBtn.disabled = true;

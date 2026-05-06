@@ -44,6 +44,10 @@ class PlanetConfig:
     amplitude: float = 20
     water_level: float = 0.275
     sharpness_strength: float = 5
+    plate_iterations: int = 5
+    plate_count: int = 15
+    range_radius: float = 2
+    range_amplitude: float = 1
 
 
 @dataclass

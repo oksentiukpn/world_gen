@@ -289,7 +289,7 @@ def generate_heightmap(
     persistence=0.4,
     lacunarity=2,
     amplitude=0,
-    water_level=0.275,
+    # water_level=0.275,
     seed=0,
     sharpness_strength=0,
 ):
@@ -342,6 +342,6 @@ def generate_heightmap(
             sharpness_strength=sharpness_strength,
         )
 
-    return np.maximum(elevations, water_level) * amplitude
+    return elevations * amplitude
     # return elevations * amplitude
     # return np.pow(elevations * amplitude , 5)

@@ -65,7 +65,7 @@ class PlanetGenerator:
                 persistence=self.config.persistence,
                 lacunarity=self.config.lacunarity,
                 amplitude=self.config.amplitude,
-                water_level=self.config.water_level,
+                # water_level=self.config.water_level,
                 sharpness_strength=self.config.sharpness_strength,
             )
 
@@ -78,6 +78,7 @@ class PlanetGenerator:
                 iterations=10,
                 plate_count=15,
                 radius=self.config.radius,
+                seed=self.config.seed,
             )
 
             # Step 4: Calculate climate and biomes
