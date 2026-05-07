@@ -4,6 +4,7 @@ This module glues together the mathematical core, cellular automata,
 and biome generation into a single, cohesive generation pipeline.
 """
 
+import numpy as np
 from biome.climate import generate_biome_map
 from core.config import PlanetConfig
 from core.fast_types import build_adjacency_list, create_spherical_grid
@@ -11,8 +12,19 @@ from core.logger import get_logger
 from core.planet_data import PlanetData
 from generation.cellular import simulate_tectonics
 from generation.noise_3d import generate_heightmap
+from numba import njit
 
 logger = get_logger(__name__)
+
+
+@njit
+def normalize(data):
+    low = np.min(data)
+    high = np.max(data)
+    span = high - low
+    if span != 0:
+        return (data - low) / span
+    return data - low
 
 
 class PlanetGenerator:
@@ -53,11 +65,26 @@ class PlanetGenerator:
             logger.info("[1/4] Initializing spherical grid (Icosphere)...")
             vertices, faces = create_spherical_grid(self.config.subdivisions)
 
-            # Step 2: Generate base heightmap using 3D noise
-            logger.info("[2/4] Generating 3D noise heightmap...")
-            # noise_scale = radius: larger planet → higher noise frequency
-            # → denser, finer terrain features automatically
-            heightmap = generate_heightmap(
+            # Step 2: Apply cellular automata (Tectonics)
+            logger.info("[2/4] Simulating tectonics...")
+            n_points = vertices.shape[0]
+            base_heightmap = np.ones(n_points, dtype=np.float32)
+            adjacency_list = build_adjacency_list(n_points, faces)
+
+            heightmap = simulate_tectonics(
+                base_heightmap,
+                adjacency_list,
+                iterations=self.config.plate_iterations,
+                plate_count=self.config.plate_count,
+                radius=self.config.range_radius,
+                seed=self.config.seed,
+            )
+
+            heightmap = normalize(heightmap) * self.config.range_amplitude
+
+            # Step 3: Generate base heightmap using 3D noise
+            logger.info("[3/4] Generating 3D noise heightmap...")
+            noise_heightmap = generate_heightmap(
                 vertices,
                 seed=self.config.seed,
                 noise_scale=self.config.noise_scale,
@@ -69,16 +96,9 @@ class PlanetGenerator:
                 sharpness_strength=self.config.sharpness_strength,
             )
 
-            # Step 3: Apply cellular automata (Tectonics)
-            logger.info("[3/4] Simulating tectonics...")
-            adjacency_list = build_adjacency_list(vertices.shape[0], faces)
-            heightmap = simulate_tectonics(
-                heightmap,
-                adjacency_list,
-                iterations=10,
-                plate_count=15,
-                radius=self.config.radius,
-                seed=self.config.seed,
+            heightmap = heightmap * noise_heightmap + noise_heightmap
+            heightmap = np.maximum(
+                heightmap, self.config.water_level * np.max(heightmap)
             )
 
             # Step 4: Calculate climate and biomes
