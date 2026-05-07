@@ -35,18 +35,18 @@ class PlanetConfig:
     """
 
     seed: int = 67
-    subdivisions: int = 5
+    subdivisions: int = 8
     radius: float = 2.0
     noise_scale: float = 1.0
     octaves: int = 5
     persistence: float = 0.4
     lacunarity: float = 2.0
-    amplitude: float = 20
-    water_level: float = 0.275
-    sharpness_strength: float = 5
-    plate_iterations: int = 5
-    plate_count: int = 15
-    range_radius: float = 2
+    amplitude: float = 30
+    water_level: float = 0.325
+    sharpness_strength: float = 4
+    plate_iterations: int = 4
+    plate_count: int = 40
+    range_radius: float = 10
     range_amplitude: float = 1
 
 
