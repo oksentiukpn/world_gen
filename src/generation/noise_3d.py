@@ -184,9 +184,10 @@ def fractal_perlin_noise_3d(
         noise, deriv_mag = perlin_noise_with_deriv(
             x * curr_scale, y * curr_scale, z * curr_scale, octave_seed
         )
-
-        attenuation = 1.0 / (1.0 + deriv_mag * sharpness_strength)
-
+        if deriv_mag * sharpness_strength == -1:
+            attenuation = 1
+        else:
+            attenuation = 1.0 / (1.0 + deriv_mag * sharpness_strength)
         value += noise * amplitude * attenuation
 
         amplitude *= persistence
