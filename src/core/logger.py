@@ -8,6 +8,45 @@ import logging
 import sys
 
 
+class ColorFormatter(logging.Formatter):
+    """
+    Custom formatter to add colors and icons to console logs.
+    """
+
+    RESET = "\033[0m"
+    DIM = "\033[2m"
+    BOLD = "\033[1m"
+
+    COLORS = {
+        logging.DEBUG: "\033[36m",  # Cyan
+        logging.INFO: "\033[94m",  # Blue
+        logging.WARNING: "\033[93m",  # Yellow
+        logging.ERROR: "\033[91m",  # Red
+        logging.CRITICAL: "\033[1m\033[91m",  # Bold Red
+    }
+
+    ICONS = {
+        logging.DEBUG: "🐛",
+        logging.INFO: "ℹ️ ",
+        logging.WARNING: "⚠️ ",
+        logging.ERROR: "❌",
+        logging.CRITICAL: "💥",
+    }
+
+    def format(self, record):
+        color = self.COLORS.get(record.levelno, self.RESET)
+        icon = self.ICONS.get(record.levelno, "")
+
+        time_str = self.formatTime(record, "%H:%M:%S")
+
+        # Shorten module name for cleaner output (e.g. 'generation.generator' -> 'generator')
+        name_str = record.name.split(".")[-1]
+
+        msg = record.getMessage()
+
+        return f"{self.DIM}[{time_str}]{self.RESET} {icon} {color}{name_str}{self.RESET} {self.DIM}→{self.RESET} {msg}"
+
+
 def get_logger(name: str, level: int = logging.INFO) -> logging.Logger:
     """
     Creates and configures a logger with the given name.
@@ -34,11 +73,8 @@ def get_logger(name: str, level: int = logging.INFO) -> logging.Logger:
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(level)
 
-        # Define the logging format: [Time] | [Level] | [Module] | Message
-        formatter = logging.Formatter(
-            fmt="[%(asctime)s] %(levelname)-8s | %(name)s: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
+        # Apply the color formatter
+        formatter = ColorFormatter()
         console_handler.setFormatter(formatter)
 
         # Add the configured handler to the logger
