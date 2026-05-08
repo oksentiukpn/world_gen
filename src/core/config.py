@@ -35,8 +35,8 @@ class PlanetConfig:
     """
 
     seed: int = 67
-    subdivisions: int = 8
-    radius: float = 2.0
+    subdivisions: int = 6
+    radius: float = 3.0
     noise_scale: float = 1.0
     octaves: int = 5
     persistence: float = 0.4
